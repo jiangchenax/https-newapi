@@ -21,6 +21,8 @@
   const contact = $('#mossContact');
   const copyEmail = $('#mossCopyEmail');
   const copyLabel = $('#mossCopyLabel');
+  const account = $('#mossAccount');
+  const logoutButton = $('#mossLogout');
 
   let noticeState = 'closed';
   let activeAnimations = [];
@@ -29,99 +31,24 @@
     return location.pathname === '/';
   }
 
-  function hideForHome(el) {
-    if (!el || el.dataset.mossHomeHidden === '1') return;
-    el.dataset.mossHomeHidden = '1';
-    el.style.setProperty('display', 'none', 'important');
-  }
-
-  function restoreHeader() {
-    document.querySelectorAll('[data-moss-home-hidden="1"]').forEach(el => {
-      el.style.removeProperty('display');
-      delete el.dataset.mossHomeHidden;
-    });
-  }
-
-  function cleanNativeHeader() {
-    const header = document.querySelector('header');
-    if (!header) return;
-
-    const nav = header.querySelector('nav') || header;
-
-    // 1) 所有 Header 链接先隐藏，只恢复真正品牌入口。
-    const links = [...nav.querySelectorAll('a')];
-    const brand =
-      links.find(a => a.querySelector('img[alt="logo"]')) ||
-      links.find(a => a.querySelector('img')) ||
-      links[0];
-
-    links.forEach(a => {
-      if (a !== brand) hideForHome(a);
-    });
-
-    if (brand) {
-      brand.style.removeProperty('display');
-      delete brand.dataset.mossHomeHidden;
-    }
-
-    // 2) 所有 Header 按钮先隐藏，只恢复真正带 Avatar 的原生头像按钮。
-    const buttons = [...nav.querySelectorAll('button')];
-    const avatarButton = buttons.find(btn => btn.querySelector('[data-slot="avatar"]'));
-
-    buttons.forEach(btn => {
-      if (btn !== avatarButton) hideForHome(btn);
-    });
-
-    if (avatarButton) {
-      avatarButton.style.removeProperty('display');
-      delete avatarButton.dataset.mossHomeHidden;
-    }
-
-    // 3) 清理竖分隔线/装饰线。
-    nav.querySelectorAll(
-      '[role="separator"], [class*="w-px"][class*="bg-border"], [class*="h-4"][class*="w-px"]'
-    ).forEach(hideForHome);
-
-    // 4) 把头像所在容器的 gap 收紧，避免隐藏后仍留下大段空位。
-    if (avatarButton) {
-      let parent = avatarButton.parentElement;
-      for (let i = 0; i < 3 && parent && parent !== nav; i += 1, parent = parent.parentElement) {
-        if (getComputedStyle(parent).display.includes('flex')) {
-          parent.style.setProperty('gap', '0', 'important');
-          parent.dataset.mossHomeGap = '1';
-          break;
-        }
-      }
-    }
-  }
-
-  function restoreHeaderGap() {
-    document.querySelectorAll('[data-moss-home-gap="1"]').forEach(el => {
-      el.style.removeProperty('gap');
-      delete el.dataset.mossHomeGap;
-    });
-  }
-
   function applyRouteState() {
     const active = isHomePath();
-    document.documentElement.toggleAttribute('data-moss-home', active);
 
     if (active) {
       document.documentElement.setAttribute('data-moss-home', '1');
       shell.setAttribute('aria-hidden', 'false');
-      cleanNativeHeader();
     } else {
       document.documentElement.removeAttribute('data-moss-home');
       shell.setAttribute('aria-hidden', 'true');
-      restoreHeader();
-      restoreHeaderGap();
 
       if (noticeState !== 'closed') hardClose();
       if (contact) contact.open = false;
+
+      const account = document.querySelector('#mossAccount');
+      if (account) account.open = false;
     }
   }
 
-  // React Router / SPA navigation watcher.
   const oldPushState = history.pushState;
   history.pushState = function (...args) {
     const result = oldPushState.apply(this, args);
@@ -138,24 +65,6 @@
 
   addEventListener('popstate', applyRouteState);
   applyRouteState();
-
-  // New API 是 React SPA，Header 可能在登录状态变化/路由变化后重新挂载。
-  // 观察 DOM，确保首页始终只保留真实 Logo + Avatar。
-  let headerCleanQueued = false;
-  const headerObserver = new MutationObserver(() => {
-    if (!isHomePath() || headerCleanQueued) return;
-
-    headerCleanQueued = true;
-    requestAnimationFrame(() => {
-      headerCleanQueued = false;
-      cleanNativeHeader();
-    });
-  });
-
-  headerObserver.observe(document.documentElement, {
-    childList: true,
-    subtree: true
-  });
 
   function cancelAnimations() {
     activeAnimations.forEach(a => {
@@ -479,7 +388,25 @@
     if (contact.open && !contact.contains(e.target)) {
       contact.open = false;
     }
+
+    if (account && account.open && !account.contains(e.target)) {
+      account.open = false;
+    }
   });
+
+  if (logoutButton) {
+    logoutButton.addEventListener('click', async () => {
+      try {
+        await fetch('/api/user/logout', {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store'
+        });
+      } catch (_) {}
+
+      location.href = '/';
+    });
+  }
 
   function escapeHTML(s = '') {
     return String(s).replace(

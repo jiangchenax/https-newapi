@@ -268,3 +268,37 @@ V3.3 不再只靠 CSS 猜 New API 的 DOM 层级。
 - 隐藏分隔线；
 - 用 MutationObserver 处理 React 重新挂载 Header 的情况；
 - 离开 `/` 后撤销这些 inline 样式，恢复正常 New API 页面。
+
+
+## V4：彻底放弃原生 Header DOM
+
+V3.3 继续保留 New API 原生 Header，再尝试隐藏其中的导航。
+实际部署中仍然无法稳定生效。
+
+V4 不再做这件事。
+
+首页 `/`：
+
+```text
+原 New API header
+→ display:none !important
+```
+
+然后 Worker 首页层自己提供：
+
+```text
+左上 New API
+右上 J
+```
+
+右上 J 使用原生 HTML `<details>` 菜单，因此不依赖 New API Header DOM。
+
+这样顶部不会再受：
+- New API React 重挂载
+- Header DOM 版本变化
+- Base UI class 变化
+- 原生导航重新渲染
+
+影响。
+
+离开 `/` 后 `data-moss-home` 被移除，原 New API Header 自动恢复。

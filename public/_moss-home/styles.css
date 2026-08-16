@@ -34,97 +34,210 @@ html[data-moss-home="1"] footer {
   display: none !important;
 }
 
-/* Native New API header stays real and interactive. */
-html[data-moss-home="1"] header {
-  position: relative !important;
-  z-index: 2147483600 !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
+/* =========================================================
+   V4 核心策略：不再修改/筛选 New API 原生 Header
+   首页直接彻底隐藏原生 Header，使用自定义极简 Topbar。
+   这样不受 New API React DOM、版本更新、CSP、重挂载影响。
+   ========================================================= */
 
-/* 首页顶部不要贴边：统一留出 28px 左右安全边距。 */
-html[data-moss-home="1"] header nav {
-  width: 100% !important;
-  max-width: none !important;
-  padding-left: 28px !important;
-  padding-right: 28px !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-/* Keep native brand. */
-html[data-moss-home="1"] header nav > a:first-child {
-  display: inline-flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-/*
- * The right-side New API header container contains links, language,
- * theme, native notification, separator and the avatar.
- * Hide every direct branch that does NOT contain the avatar.
- */
-html[data-moss-home="1"]
-header nav > div:has([data-slot="avatar"]) > *:not(:has([data-slot="avatar"])) {
+html[data-moss-home="1"] body header {
   display: none !important;
 }
 
-/* Extra fallback for current New API DOM. */
-html[data-moss-home="1"] header nav > div.hidden.items-center > a,
-html[data-moss-home="1"]
-header nav > div.hidden.items-center >
-button:not(:has([data-slot="avatar"])),
-html[data-moss-home="1"] header nav > div.hidden.items-center > div:not(:has([data-slot="avatar"])) {
-  display: none !important;
+/* 自定义顶部栏不是 <header>，不会被上面的规则误伤 */
+#moss-home-shell .moss-topbar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 120;
+  height: 74px;
+  pointer-events: none;
 }
 
-/* Restore the real avatar dropdown trigger. */
-html[data-moss-home="1"]
-header button[data-slot="dropdown-menu-trigger"]:has([data-slot="avatar"]),
-html[data-moss-home="1"]
-header button:has([data-slot="avatar"]) {
-  display: inline-flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
+#moss-home-shell .moss-brand {
+  position: absolute;
+  top: 20px;
+  left: 32px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255,255,255,.94);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 680;
+  letter-spacing: -.01em;
+  text-shadow: 0 1px 10px rgba(0,0,0,.20);
+  pointer-events: auto;
+  transition: opacity .18s ease, transform .18s ease;
 }
 
-/* Never show the native header bell on the custom home. */
-html[data-moss-home="1"]
-header button[data-slot="popover-trigger"][aria-label="通知"],
-html[data-moss-home="1"]
-header button[aria-label*="通知"] {
-  display: none !important;
+#moss-home-shell .moss-brand:hover {
+  opacity: .88;
+  transform: translateY(-1px);
 }
 
-/* Remove native header separators on home. */
-html[data-moss-home="1"] header nav [role="separator"],
-html[data-moss-home="1"] header nav [class*="w-px"][class*="bg-border"],
-html[data-moss-home="1"] header nav [class*="h-4"][class*="w-px"] {
-  display: none !important;
+#moss-home-shell .moss-brand img {
+  width: 26px;
+  height: 26px;
+  display: block;
 }
 
-
-/* V3.3 fallback：JS 会做最终清理，这里仅作为首屏兜底。 */
-html[data-moss-home="1"] header nav a {
-  display: none !important;
+#moss-home-shell .moss-account {
+  position: absolute;
+  top: 18px;
+  right: 32px;
+  width: 42px;
+  height: 42px;
+  pointer-events: auto;
 }
 
-html[data-moss-home="1"] header nav > a:first-child,
-html[data-moss-home="1"] header nav a:has(img[alt="logo"]) {
-  display: inline-flex !important;
+#moss-home-shell .moss-account > summary {
+  list-style: none;
 }
 
-html[data-moss-home="1"] header nav button {
-  display: none !important;
+#moss-home-shell .moss-account > summary::-webkit-details-marker {
+  display: none;
 }
 
-html[data-moss-home="1"] header nav button:has([data-slot="avatar"]) {
-  display: inline-flex !important;
+#moss-home-shell .moss-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(14,16,19,.16);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.15),
+    inset 0 1px 0 rgba(255,255,255,.12);
+  color: rgba(255,255,255,.96);
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    border-color .18s ease;
+}
+
+#moss-home-shell .moss-avatar:hover {
+  transform: translateY(-1px);
+  background: rgba(14,16,19,.24);
+  border-color: rgba(255,255,255,.30);
+}
+
+#moss-home-shell .moss-account-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 244px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 18px;
+  background: rgba(20,22,25,.78);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  box-shadow:
+    0 24px 64px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.10);
+  opacity: 0;
+  transform: translateY(-6px) scale(.985);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity .18s ease,
+    transform .22s cubic-bezier(.16,1,.3,1);
+}
+
+#moss-home-shell .moss-account[open] .moss-account-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+#moss-home-shell .moss-account-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 9px;
+}
+
+#moss-home-shell .moss-account-big-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #d2ad2f;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+#moss-home-shell .moss-account-head strong {
+  display: block;
+  color: rgba(255,255,255,.94);
+  font-size: 12px;
+  font-weight: 680;
+}
+
+#moss-home-shell .moss-account-head span {
+  display: block;
+  margin-top: 2px;
+  color: rgba(255,255,255,.42);
+  font-size: 9px;
+}
+
+#moss-home-shell .moss-account-sep {
+  height: 1px;
+  margin: 4px 2px;
+  background: rgba(255,255,255,.08);
+}
+
+#moss-home-shell .moss-account-menu a,
+#moss-home-shell .moss-account-menu button {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255,255,255,.72);
+  text-decoration: none;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease;
+}
+
+#moss-home-shell .moss-account-menu a:hover,
+#moss-home-shell .moss-account-menu button:hover {
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.96);
+}
+
+#moss-home-shell .moss-account-menu .moss-logout {
+  color: rgba(255,105,105,.92);
+}
+
+@media (max-width: 640px) {
+  #moss-home-shell .moss-brand {
+    top: 14px;
+    left: 16px;
+  }
+
+  #moss-home-shell .moss-account {
+    top: 12px;
+    right: 16px;
+  }
+
+  #moss-home-shell .moss-account-menu {
+    width: min(244px, calc(100vw - 32px));
+  }
 }
 
 
