@@ -4,36 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#151719">
   <title>MOSS Home Preview</title>
   <link rel="stylesheet" href="/_moss-home/styles.css">
   <style>
-    html[data-moss-home="1"] body { margin:0; background:#151719; }
-    .preview-header {
-      position:fixed; top:0; left:0; right:0; z-index:2147483600;
-      height:68px; display:flex; align-items:center; justify-content:space-between;
-      padding:0 18px; pointer-events:none;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
-    }
-    .preview-brand,.preview-avatar {
-      pointer-events:auto; color:rgba(20,20,20,.85); font-weight:650;
-      text-decoration:none;
-    }
-    .preview-brand { display:flex; gap:9px; align-items:center; }
-    .preview-brand img { width:25px; height:25px; }
-    .preview-avatar {
-      width:36px;height:36px;border-radius:50%;
-      display:grid;place-items:center;background:#d5b334;color:white;
+    html,body {
+      width:100%;
+      height:100%;
+      margin:0;
+      overflow:hidden;
+      background:#151719;
     }
   </style>
 </head>
 <body>
-  <header class="preview-header">
-    <a class="preview-brand" href="https://newapi.mossao.com/">
-      <img src="https://res.oplist.org/logo/logo.svg" alt="">
-      <span>New API</span>
-    </a>
-    <a class="preview-avatar" href="https://newapi.mossao.com/console/setting">J</a>
-  </header>
   <div id="moss-home-shell" aria-hidden="false">
   <div class="moss-wallpaper" aria-hidden="true"></div>
   <div class="moss-vignette" aria-hidden="true"></div>

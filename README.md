@@ -193,3 +193,63 @@ return env.ASSETS.fetch(request)
 ```
 
 让 Cloudflare 用 `/` 正常返回 `index.html`，不再发生重定向循环。
+
+
+## V3.2：铃铛与重复 Header 修复
+
+### 为什么 V3.1 的铃铛消失
+
+V3.1 有一条过宽的 CSS：
+
+```css
+html[data-moss-home="1"] main { ... }
+```
+
+它不仅隐藏了 New API 原来的 `<main>`，也把我们自定义首页里的：
+
+```html
+<main class="moss-stage">
+```
+
+一起隐藏，所以中央铃铛不见了。
+
+V3.2 已改成：
+
+```css
+html[data-moss-home="1"] #root main { ... }
+```
+
+只隐藏 New API 自己的 main，不再影响自定义铃铛。
+
+### 为什么你截图里导航和两个 J 还在
+
+那张截图仍然是：
+
+```text
+New API 父页面
+  └─ 首页内容 iframe
+       └─ workers.dev 预览
+```
+
+所以父页面 Header 和 iframe 里的预览 Header 同时存在。
+
+V3.2 已把 workers.dev 里的假 Logo / 假头像全部删除。
+
+但正式切换 Worker Route 前，你仍然必须把 New API 的：
+
+```text
+首页内容
+页脚文本
+```
+
+全部清空。
+
+然后再给 Worker 添加：
+
+```text
+newapi.mossao.com/*
+```
+
+Route。
+
+只有这样才是真正的“前门模式”，不再存在 iframe。
