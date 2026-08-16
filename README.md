@@ -302,3 +302,68 @@ V4 不再做这件事。
 影响。
 
 离开 `/` 后 `data-moss-home` 被移除，原 New API Header 自动恢复。
+
+
+## V4.1：通知未读绿点
+
+铃铛绿点现在改为真正的“未读更新”状态：
+
+- 默认隐藏；
+- 成功拉取 `/api/notice` 后计算当前公告签名；
+- 本地没有读过这版公告时，显示绿点；
+- 点击铃铛打开通知中心后立即标记为已读，绿点消失；
+- 同一批公告以后刷新页面仍保持无绿点；
+- 后端公告内容/时间/id 发生变化后，绿点重新出现；
+- 页面打开期间每 2 分钟检查一次更新；
+- `/api/notice` 请求失败不会误亮绿点。
+
+状态存储：
+
+```text
+localStorage:
+moss.home.notice.seen.v1
+```
+
+另外如果页面仍运行在 New API 的旧“首页内容” iframe 中，
+V4.1 会自动隐藏 Worker 自己的 Topbar，减少 Logo/J 重复。
+真正消除原生导航仍需要清空“首页内容”和“页脚文本”，并启用 Worker Route。
+
+
+## V4.2：只保留自定义顶部栏
+
+用户最终要求：
+
+```text
+不要 New API 原来的顶部栏
+只保留 Worker 自定义顶部栏
+```
+
+V4.2 在 Worker 返回首页 HTML 时，服务器侧直接：
+
+```html
+<html data-moss-home="1">
+```
+
+并在 `<head>` 第一时间注入：
+
+```css
+html[data-moss-home="1"] body header {
+  display: none !important;
+}
+```
+
+因此正式 Worker Route 模式下：
+- 原 New API Header 首屏就不会出现；
+- 不依赖 React DOM；
+- 不依赖 JS 等待加载；
+- 不会闪一下再消失；
+- 只保留 Worker 自己的 New API Logo + J。
+
+注意：
+如果 `workers.dev` 仍然被放在 New API「首页内容」iframe 里，
+Worker 无法控制 iframe 外面的父页面 Header。
+
+最终效果必须：
+1. 清空 New API「首页内容」
+2. 清空 New API「页脚文本」
+3. 给 Worker 添加 Route `newapi.mossao.com/*`

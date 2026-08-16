@@ -241,6 +241,9 @@ html[data-moss-home="1"] body header {
 }
 
 
+
+
+
 /* =========================================================
    Injected home shell
    ========================================================= */
@@ -356,6 +359,18 @@ html[data-moss-home="1"] body header {
   box-shadow:
     0 0 0 3px rgba(74,222,128,.11),
     0 0 12px rgba(74,222,128,.34);
+
+  /* 默认没有未读，不显示 */
+  opacity: 0;
+  transform: scale(.55);
+  transition:
+    opacity .18s ease,
+    transform .24s cubic-bezier(.16,1,.3,1);
+}
+
+#moss-home-shell .moss-bell-dot.is-unread {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* =========================================================

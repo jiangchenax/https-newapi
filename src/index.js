@@ -199,17 +199,34 @@ async function previewMode(request, env) {
   return Response.redirect(destination.toString(), 302);
 }
 
-async function injectHomeLayer(response) {
+async function injectHomeLayer(response, isHome) {
   if (!isHtml(response)) return response;
 
   return new HTMLRewriter()
+    .on('html', {
+      element(el) {
+        if (isHome) {
+          // 在 HTML 返回给浏览器前就标记首页，避免等待 JS 后再隐藏原 Header。
+          el.setAttribute('data-moss-home', '1');
+        }
+      }
+    })
     .on('head', {
       element(el) {
-        el.append(
+        let injected =
           '<link rel="stylesheet" href="/_moss-home/styles.css">' +
-          '<script src="/_moss-home/app.js" defer></script>',
-          { html: true }
-        );
+          '<script src="/_moss-home/app.js" defer></script>';
+
+        if (isHome) {
+          // 首页原生 Header 在首屏阶段就直接隐藏，不给它任何闪现机会。
+          injected =
+            '<style id="moss-home-native-header-kill">' +
+            'html[data-moss-home="1"] body header{display:none!important}' +
+            '</style>' +
+            injected;
+        }
+
+        el.append(injected, { html: true });
       }
     })
     .on('body', {
@@ -247,7 +264,7 @@ export default {
 
     // Only HTML documents get our shell injected.
     if (isHtml(originResponse)) {
-      return injectHomeLayer(originResponse);
+      return injectHomeLayer(originResponse, url.pathname === '/');
     }
 
     return originResponse;

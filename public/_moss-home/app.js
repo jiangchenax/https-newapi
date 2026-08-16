@@ -9,7 +9,9 @@
   const shell = $('#moss-home-shell');
   if (!shell) return;
 
+
   const bell = $('#mossBellButton');
+  const bellDot = bell?.querySelector('.moss-bell-dot');
   const panel = $('#mossNoticePanel');
   const panelInner = $('#mossPanelInner');
   const sheen = $('#mossPanelSheen');
@@ -26,6 +28,10 @@
 
   let noticeState = 'closed';
   let activeAnimations = [];
+  let currentNoticeSignature = '';
+  let noticeFetchInFlight = false;
+
+  const NOTICE_SEEN_KEY = 'moss.home.notice.seen.v1';
 
   function isHomePath() {
     return location.pathname === '/';
@@ -95,9 +101,57 @@
     contact.style.transform = 'translateX(-50%)';
   }
 
+  function makeNoticeSignature(items) {
+    const normalized = items.slice(0, 20).map(item => ({
+      id: item.id ?? item.notice_id ?? item.uuid ?? '',
+      title: item.title ?? item.name ?? item.type ?? '',
+      content: item.content ?? item.description ?? item.message ?? item.text ?? '',
+      time: item.time ?? item.created_at ?? item.createdAt ?? item.date ?? ''
+    }));
+
+    return JSON.stringify(normalized);
+  }
+
+  function setUnreadNotice(unread) {
+    if (!bellDot) return;
+
+    bellDot.classList.toggle('is-unread', Boolean(unread));
+    bellDot.setAttribute('aria-hidden', unread ? 'false' : 'true');
+  }
+
+  function syncUnreadState(items) {
+    currentNoticeSignature = makeNoticeSignature(items);
+
+    let seen = '';
+    try {
+      seen = localStorage.getItem(NOTICE_SEEN_KEY) || '';
+    } catch (_) {}
+
+    setUnreadNotice(
+      Boolean(currentNoticeSignature) &&
+      currentNoticeSignature !== seen
+    );
+  }
+
+  function markCurrentNoticeSeen() {
+    if (!currentNoticeSignature) {
+      setUnreadNotice(false);
+      return;
+    }
+
+    try {
+      localStorage.setItem(NOTICE_SEEN_KEY, currentNoticeSignature);
+    } catch (_) {}
+
+    setUnreadNotice(false);
+  }
+
   function openNotice() {
     if (!isHomePath()) return;
     if (noticeState === 'open' || noticeState === 'opening') return;
+
+    // 用户已经主动打开通知中心，即视为“已查看”。
+    markCurrentNoticeSeen();
 
     noticeState = 'opening';
     cancelAnimations();
@@ -546,12 +600,18 @@
     }).join('');
   }
 
-  async function loadNotices() {
-    refreshNotice.disabled = true;
-    refreshNotice.textContent = '加载中';
+  async function loadNotices(options = {}) {
+    const { silent = false } = options;
+
+    if (noticeFetchInFlight) return;
+    noticeFetchInFlight = true;
+
+    if (!silent) {
+      refreshNotice.disabled = true;
+      refreshNotice.textContent = '加载中';
+    }
 
     try {
-      // Same-origin New API endpoint.
       const response = await fetch('/api/notice', {
         cache: 'no-store',
         credentials: 'same-origin'
@@ -569,16 +629,24 @@
       }
 
       renderNotices(items);
+      syncUnreadState(items);
     } catch (error) {
       console.warn('[MOSS HOME] notice load failed:', error);
-      renderFallback();
+
+      // 失败时继续显示兜底内容，但不把“兜底内容”当成新通知，
+      // 避免绿点因为接口失败而误亮。
+      if (!silent) renderFallback();
     } finally {
-      refreshNotice.disabled = false;
-      refreshNotice.textContent = '刷新';
+      noticeFetchInFlight = false;
+
+      if (!silent) {
+        refreshNotice.disabled = false;
+        refreshNotice.textContent = '刷新';
+      }
     }
   }
 
-  refreshNotice.addEventListener('click', loadNotices);
+  refreshNotice.addEventListener('click', () => loadNotices());
 
   renderFallback();
   loadNotices();
