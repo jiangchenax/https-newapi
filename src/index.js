@@ -153,8 +153,11 @@ async function previewMode(request, env) {
   }
 
   if (url.pathname === '/') {
-    const previewURL = new URL('/index.html', request.url);
-    return env.ASSETS.fetch(new Request(previewURL, request));
+    // 直接按原始 "/" 请求静态资源。
+    // Cloudflare Static Assets 会把 "/" 正常解析为 index.html。
+    // 不要内部改写成 "/index.html"：默认 HTML handling 会把
+    // "/index.html" 307 规范化回 "/"，从而形成无限重定向。
+    return env.ASSETS.fetch(request);
   }
 
   const destination = new URL(request.url);

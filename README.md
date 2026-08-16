@@ -175,3 +175,21 @@ newapi.mossao.com/*
 立即恢复为原来的 New API 直连状态。
 
 GitHub / Worker 可以保留，不需要删。
+
+## V3.1 修复
+
+V3 的 `workers.dev` 预览曾把 `/` 内部改写为 `/index.html`。
+Cloudflare Static Assets 默认会把 `/index.html` 规范化重定向回 `/`，
+于是形成：
+
+```text
+/ → /index.html → 307 / → /index.html → ...
+```
+
+V3.1 已改为直接：
+
+```js
+return env.ASSETS.fetch(request)
+```
+
+让 Cloudflare 用 `/` 正常返回 `index.html`，不再发生重定向循环。
