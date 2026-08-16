@@ -221,7 +221,9 @@ async function injectHomeLayer(response, isHome) {
           // 首页原生 Header 在首屏阶段就直接隐藏，不给它任何闪现机会。
           injected =
             '<style id="moss-home-native-header-kill">' +
-            'html[data-moss-home="1"] body header{display:none!important}' +
+            'html[data-moss-home="1"] header nav>a[href="/"]{display:none!important}' +
+            'html[data-moss-home="1"] header nav>div.hidden.items-center{display:none!important}' +
+            'html[data-moss-home="1"] header nav>div.flex.items-center.gap-2[class*="sm:hidden"]{display:none!important}' +
             '</style>' +
             injected;
         }

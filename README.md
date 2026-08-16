@@ -367,3 +367,27 @@ Worker 无法控制 iframe 外面的父页面 Header。
 1. 清空 New API「首页内容」
 2. 清空 New API「页脚文本」
 3. 给 Worker 添加 Route `newapi.mossao.com/*`
+
+
+## V4.3：改用已验证可生效的原 Header 选择器
+
+不再使用：
+
+```css
+body header { display:none }
+```
+
+而是直接采用旧版页脚中已经在当前 New API 上验证生效的 DOM：
+
+```css
+header nav > a[href="/"]
+header nav > div.hidden.items-center
+header nav > div.flex.items-center.gap-2[class*="sm:hidden"]
+```
+
+首页会直接隐藏：
+- 原 Logo
+- 原桌面整组导航与按钮
+- 原手机导航
+
+只留下 Worker 自己的 Topbar / 铃铛 / Contact。

@@ -40,7 +40,17 @@ html[data-moss-home="1"] footer {
    这样不受 New API React DOM、版本更新、CSP、重挂载影响。
    ========================================================= */
 
-html[data-moss-home="1"] body header {
+/* 使用旧版已验证可生效的 New API Header DOM 结构，不再隐藏整个 header */
+html[data-moss-home="1"] header nav > a[href="/"] {
+  display: none !important;
+}
+
+html[data-moss-home="1"] header nav > div.hidden.items-center {
+  display: none !important;
+}
+
+html[data-moss-home="1"]
+header nav > div.flex.items-center.gap-2[class*="sm:hidden"] {
   display: none !important;
 }
 
