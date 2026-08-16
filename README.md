@@ -253,3 +253,18 @@ newapi.mossao.com/*
 Route。
 
 只有这样才是真正的“前门模式”，不再存在 iframe。
+
+
+## V3.3：Header 强制清理
+
+V3.2 截图中中央铃铛已经恢复，但 New API 原生导航仍然显示。
+
+V3.3 不再只靠 CSS 猜 New API 的 DOM 层级。
+
+首页加载后 JavaScript 会直接：
+- 找到原生 Header；
+- 隐藏 Header 中所有链接，只保留真正 Logo；
+- 隐藏 Header 中所有按钮，只保留真正 Avatar；
+- 隐藏分隔线；
+- 用 MutationObserver 处理 React 重新挂载 Header 的情况；
+- 离开 `/` 后撤销这些 inline 样式，恢复正常 New API 页面。

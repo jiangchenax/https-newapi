@@ -108,6 +108,26 @@ html[data-moss-home="1"] header nav [class*="h-4"][class*="w-px"] {
   display: none !important;
 }
 
+
+/* V3.3 fallback：JS 会做最终清理，这里仅作为首屏兜底。 */
+html[data-moss-home="1"] header nav a {
+  display: none !important;
+}
+
+html[data-moss-home="1"] header nav > a:first-child,
+html[data-moss-home="1"] header nav a:has(img[alt="logo"]) {
+  display: inline-flex !important;
+}
+
+html[data-moss-home="1"] header nav button {
+  display: none !important;
+}
+
+html[data-moss-home="1"] header nav button:has([data-slot="avatar"]) {
+  display: inline-flex !important;
+}
+
+
 /* =========================================================
    Injected home shell
    ========================================================= */
