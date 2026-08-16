@@ -1,5 +1,5 @@
 {
-  "name": "moss-newapi-home",
+  "name": "moss-newapi-frontdoor",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",

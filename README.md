@@ -1,115 +1,177 @@
-# MOSS New API · Cloudflare Workers 版
+# MOSS New API · Worker 前门版 V3
 
-这个版本是针对 `*.workers.dev` 部署方式重新整理的。
+## 这版和之前最大的区别
 
-## 目录
+不再使用：
+
+- New API「首页内容」iframe
+- New API「页脚文本」来罩/隐藏页面
+- Cloudflare Worker 作为第二个独立首页
+
+而是让 Worker **直接运行在 New API 原站前面**。
+
+生产结构：
 
 ```text
-moss-newapi-home-workers/
-├─ public/
-│  ├─ index.html
-│  ├─ styles.css
-│  ├─ app.js
-│  └─ _headers
-├─ src/
-│  └─ index.js
-├─ wrangler.jsonc
-├─ package.json
-└─ README.md
+浏览器
+  ↓
+newapi.mossao.com
+  ↓
+Cloudflare Worker Route
+  ├─ HTML 页面 → 从原 New API 取回 HTML，再注入自定义首页层
+  ├─ /_moss-home/* → Worker Static Assets
+  ├─ /api/* → 原样放行给 New API
+  ├─ /console/* → 原样放行给 New API
+  └─ 其他路径 → 原样放行给 New API VPS
 ```
 
-## 为什么要换这个版本
+首页 `/`：
+- 原生 New API Header 仍然是真实 DOM
+- 保留原生左上 Logo
+- 保留原生右上 J 与原生下拉菜单
+- 隐藏中间导航 / 语言 / 主题 / 原生铃铛
+- 自定义壁纸 / 中央铃铛 / 通知中心 / Contact 由 Worker 注入
 
-之前的 `functions/api/notice.js` 是 Cloudflare Pages Functions 的目录约定。
-如果你当前项目实际创建成了 Cloudflare Worker，`functions/` 不会自动变成 `/api/notice`。
+离开 `/` 后：
+- 自动恢复完整 New API 页面
+- 不再隐藏控制台内容
 
-这个版本改成真正的 Workers 架构：
+## 为什么必须使用 Worker Route，不要用 Custom Domain
 
-- `public/` = 首页静态文件
-- `src/index.js` = Worker 服务端代码
-- `/api/notice` = Worker 自己处理
-- 其他路径 = `env.ASSETS.fetch(request)` 返回静态页面
+你的 `newapi.mossao.com` 后面已经有真实 New API VPS。
 
-## GitHub 更新方法
+Cloudflare 官方针对这种“Worker 在现有源站前面”的情况推荐 Worker Routes。
+Route 中 `fetch(request)` 会继续请求当前 DNS 配置对应的真实源站。
 
-把 GitHub 仓库内容改成这个 ZIP 解压后的内容。
+不要把 `newapi.mossao.com` 改成这个 Worker 的 Custom Domain，
+否则 Worker 会变成这个 hostname 的 origin，反代逻辑会完全不同。
 
-仓库根目录必须直接看到：
+## 第 1 步：更新 GitHub
+
+把 ZIP 解压后的内容覆盖到当前 `moss-newapi-home` GitHub 仓库。
+
+根目录：
 
 ```text
-public
-src
+public/
+src/
 wrangler.jsonc
 package.json
 README.md
 ```
 
-删除旧的：
+Commit 到 `main`，等 Cloudflare 自动部署。
+
+## 第 2 步：先测试 workers.dev
+
+先打开：
 
 ```text
-functions/
+https://moss-newapi-home.zhaochengjian666.workers.dev/
 ```
 
-然后 Commit 到 `main`。
+这里是安全预览模式。
 
-## Cloudflare Workers Build 设置
+确认：
+- 壁纸
+- 铃铛
+- Glass Unfold
+- Contact
+- COPY
+- Gmail / Outlook / QQ邮箱
 
-在：
+都正常。
+
+workers.dev 只是预览，不会修改 newapi.mossao.com。
+
+## 第 3 步：清理 New API 设置
+
+正式接入 Route 前，建议把 New API：
+
+```text
+首页内容
+页脚文本
+```
+
+都清空。
+
+因为 V3 不再需要 iframe 和页脚 CSS。
+
+## 第 4 步：确认 newapi.mossao.com 的 DNS 仍指向真实 New API 源站
+
+Cloudflare DNS 中：
+
+```text
+newapi.mossao.com
+```
+
+必须还是你原来 New API 的 A / AAAA / CNAME 记录，并保持橙云代理。
+
+不要改成 workers.dev CNAME。
+
+## 第 5 步：给 Worker 添加 Route
+
+Cloudflare：
 
 ```text
 Workers & Pages
 → moss-newapi-home
 → Settings
-→ Build
+→ Domains & Routes
+→ Add
+→ Route
 ```
 
-确认：
+填写：
 
 ```text
-Production branch: main
-Build command: 留空
-Deploy command: npx wrangler deploy
-Root directory: /
+Route:
+newapi.mossao.com/*
+
+Zone:
+mossao.com
 ```
 
-提交 GitHub 后等待新部署完成。
+保存。
 
-## 测试
+注意：选的是 **Route**，不是 Custom Domain。
 
-先测试首页：
+## 第 6 步：测试
+
+打开：
 
 ```text
-https://moss-newapi-home.<你的workers.dev子域>.workers.dev/
+https://newapi.mossao.com/
 ```
+
+应该直接看到自定义首页，不再有 iframe。
 
 再测试：
 
 ```text
-https://moss-newapi-home.<你的workers.dev子域>.workers.dev/api/notice
+https://newapi.mossao.com/console/setting
+https://newapi.mossao.com/api/status
 ```
 
-第二个地址应该返回 New API 公告 JSON，而不是 404。
+这些应该继续是原 New API。
 
+## 回滚
 
-## V2：嵌入 New API 首页后的去重
-
-如果把 Workers URL 填进 New API 的「首页内容」，New API 自己的 Header 仍在 iframe 外层。
-
-V2 已经从 Workers 首页内部移除：
-- 左上 New API Logo
-- 右上 J
-
-这样不会与 New API 原生 Header 重复。
-
-同时使用随包提供的：
+如果出现任何异常：
 
 ```text
-NewAPI_页脚文本_CF首页外壳精简版.txt
+Workers & Pages
+→ moss-newapi-home
+→ Settings
+→ Domains & Routes
 ```
 
-放到 New API「页脚文本」，它只负责：
-- 保留原生左上 Logo
-- 保留原生右上头像
-- 隐藏主页 / 控制台 / 模型广场 / 排行榜 / 文档 / 关于
-- 隐藏语言 / 主题 / 原生通知铃铛等右侧多余按钮
-- 不再承担首页主体 UI
+删除：
+
+```text
+newapi.mossao.com/*
+```
+
+立即恢复为原来的 New API 直连状态。
+
+GitHub / Worker 可以保留，不需要删。
