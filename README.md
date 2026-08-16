@@ -1,117 +1,101 @@
-# MOSS New API · Worker 前门版 V3
+# MOSS New API · Worker 前门 V5（首页直接替换）
 
-## 这版和之前最大的区别
+## V5 的核心变化
 
-不再使用：
+V5 不再尝试：
 
-- New API「首页内容」iframe
-- New API「页脚文本」来罩/隐藏页面
-- Cloudflare Worker 作为第二个独立首页
+- 隐藏 New API 原来的 Header
+- 修改 New API 原来的首页 DOM
+- HTMLRewriter 注入首页
+- iframe
+- 页脚 CSS
 
-而是让 Worker **直接运行在 New API 原站前面**。
-
-生产结构：
-
-```text
-浏览器
-  ↓
-newapi.mossao.com
-  ↓
-Cloudflare Worker Route
-  ├─ HTML 页面 → 从原 New API 取回 HTML，再注入自定义首页层
-  ├─ /_moss-home/* → Worker Static Assets
-  ├─ /api/* → 原样放行给 New API
-  ├─ /console/* → 原样放行给 New API
-  └─ 其他路径 → 原样放行给 New API VPS
-```
-
-首页 `/`：
-- 原生 New API Header 仍然是真实 DOM
-- 保留原生左上 Logo
-- 保留原生右上 J 与原生下拉菜单
-- 隐藏中间导航 / 语言 / 主题 / 原生铃铛
-- 自定义壁纸 / 中央铃铛 / 通知中心 / Contact 由 Worker 注入
-
-离开 `/` 后：
-- 自动恢复完整 New API 页面
-- 不再隐藏控制台内容
-
-## 为什么必须使用 Worker Route，不要用 Custom Domain
-
-你的 `newapi.mossao.com` 后面已经有真实 New API VPS。
-
-Cloudflare 官方针对这种“Worker 在现有源站前面”的情况推荐 Worker Routes。
-Route 中 `fetch(request)` 会继续请求当前 DNS 配置对应的真实源站。
-
-不要把 `newapi.mossao.com` 改成这个 Worker 的 Custom Domain，
-否则 Worker 会变成这个 hostname 的 origin，反代逻辑会完全不同。
-
-## 第 1 步：更新 GitHub
-
-把 ZIP 解压后的内容覆盖到当前 `moss-newapi-home` GitHub 仓库。
-
-根目录：
+而是直接：
 
 ```text
-public/
-src/
-wrangler.jsonc
-package.json
-README.md
+GET https://newapi.mossao.com/
+        ↓
+Worker
+        ↓
+返回我们自己的 public/index.html
 ```
 
-Commit 到 `main`，等 Cloudflare 自动部署。
+因此首页 HTML 中根本没有 New API 原来的 Header。
 
-## 第 2 步：先测试 workers.dev
+不会再出现：
 
-先打开：
+```text
+主页
+控制台
+模型广场
+排行榜
+文档
+关于
+语言
+主题
+原生通知铃铛
+原生 J
+```
+
+首页只存在 Worker 自己的：
+
+```text
+左上 New API
+中央铃铛
+右上 J
+底部 Contact
+```
+
+## 其他 New API 页面不会受影响
+
+```text
+/                  → Worker 自定义首页
+/_moss-home/*      → Worker 静态 CSS/JS
+
+/dashboard         → 原 New API
+/console/*         → 原 New API
+/api/*             → 原 New API
+其他路径           → 原 New API
+```
+
+Cloudflare Worker Route 中，`fetch(request)` 会继续请求 DNS 记录对应的真实 New API 源站。
+
+## 部署
+
+### 1. GitHub
+
+用 V5 ZIP 覆盖当前 GitHub 仓库并 Commit 到 main。
+
+### 2. 先测试 workers.dev
 
 ```text
 https://moss-newapi-home.zhaochengjian666.workers.dev/
 ```
 
-这里是安全预览模式。
+这里直接显示 V5 首页。
 
-确认：
-- 壁纸
-- 铃铛
-- Glass Unfold
-- Contact
-- COPY
-- Gmail / Outlook / QQ邮箱
+### 3. New API 设置全部清空
 
-都正常。
-
-workers.dev 只是预览，不会修改 newapi.mossao.com。
-
-## 第 3 步：清理 New API 设置
-
-正式接入 Route 前，建议把 New API：
+正式启用 Route 前：
 
 ```text
-首页内容
-页脚文本
+首页内容 → 清空
+页脚文本 → 清空
 ```
 
-都清空。
+绝对不要再把 workers.dev 填进“首页内容”。
 
-因为 V3 不再需要 iframe 和页脚 CSS。
+### 4. DNS 不变
 
-## 第 4 步：确认 newapi.mossao.com 的 DNS 仍指向真实 New API 源站
-
-Cloudflare DNS 中：
+Cloudflare DNS：
 
 ```text
 newapi.mossao.com
 ```
 
-必须还是你原来 New API 的 A / AAAA / CNAME 记录，并保持橙云代理。
+仍然指向原 New API VPS，并保持橙云代理。
 
-不要改成 workers.dev CNAME。
-
-## 第 5 步：给 Worker 添加 Route
-
-Cloudflare：
+### 5. 添加 Worker Route
 
 ```text
 Workers & Pages
@@ -125,269 +109,40 @@ Workers & Pages
 填写：
 
 ```text
-Route:
 newapi.mossao.com/*
+```
 
-Zone:
+Zone：
+
+```text
 mossao.com
 ```
 
-保存。
+选择 Route，不是 Custom Domain。
 
-注意：选的是 **Route**，不是 Custom Domain。
-
-## 第 6 步：测试
-
-打开：
+### 6. 测试
 
 ```text
 https://newapi.mossao.com/
 ```
 
-应该直接看到自定义首页，不再有 iframe。
+这里应该只有自定义首页。
 
-再测试：
+然后测试：
 
 ```text
 https://newapi.mossao.com/console/setting
-https://newapi.mossao.com/api/status
+https://newapi.mossao.com/api/notice
 ```
 
-这些应该继续是原 New API。
+这些仍然进入原 New API。
 
 ## 回滚
 
-如果出现任何异常：
-
-```text
-Workers & Pages
-→ moss-newapi-home
-→ Settings
-→ Domains & Routes
-```
-
-删除：
+只删除 Worker Route：
 
 ```text
 newapi.mossao.com/*
 ```
 
-立即恢复为原来的 New API 直连状态。
-
-GitHub / Worker 可以保留，不需要删。
-
-## V3.1 修复
-
-V3 的 `workers.dev` 预览曾把 `/` 内部改写为 `/index.html`。
-Cloudflare Static Assets 默认会把 `/index.html` 规范化重定向回 `/`，
-于是形成：
-
-```text
-/ → /index.html → 307 / → /index.html → ...
-```
-
-V3.1 已改为直接：
-
-```js
-return env.ASSETS.fetch(request)
-```
-
-让 Cloudflare 用 `/` 正常返回 `index.html`，不再发生重定向循环。
-
-
-## V3.2：铃铛与重复 Header 修复
-
-### 为什么 V3.1 的铃铛消失
-
-V3.1 有一条过宽的 CSS：
-
-```css
-html[data-moss-home="1"] main { ... }
-```
-
-它不仅隐藏了 New API 原来的 `<main>`，也把我们自定义首页里的：
-
-```html
-<main class="moss-stage">
-```
-
-一起隐藏，所以中央铃铛不见了。
-
-V3.2 已改成：
-
-```css
-html[data-moss-home="1"] #root main { ... }
-```
-
-只隐藏 New API 自己的 main，不再影响自定义铃铛。
-
-### 为什么你截图里导航和两个 J 还在
-
-那张截图仍然是：
-
-```text
-New API 父页面
-  └─ 首页内容 iframe
-       └─ workers.dev 预览
-```
-
-所以父页面 Header 和 iframe 里的预览 Header 同时存在。
-
-V3.2 已把 workers.dev 里的假 Logo / 假头像全部删除。
-
-但正式切换 Worker Route 前，你仍然必须把 New API 的：
-
-```text
-首页内容
-页脚文本
-```
-
-全部清空。
-
-然后再给 Worker 添加：
-
-```text
-newapi.mossao.com/*
-```
-
-Route。
-
-只有这样才是真正的“前门模式”，不再存在 iframe。
-
-
-## V3.3：Header 强制清理
-
-V3.2 截图中中央铃铛已经恢复，但 New API 原生导航仍然显示。
-
-V3.3 不再只靠 CSS 猜 New API 的 DOM 层级。
-
-首页加载后 JavaScript 会直接：
-- 找到原生 Header；
-- 隐藏 Header 中所有链接，只保留真正 Logo；
-- 隐藏 Header 中所有按钮，只保留真正 Avatar；
-- 隐藏分隔线；
-- 用 MutationObserver 处理 React 重新挂载 Header 的情况；
-- 离开 `/` 后撤销这些 inline 样式，恢复正常 New API 页面。
-
-
-## V4：彻底放弃原生 Header DOM
-
-V3.3 继续保留 New API 原生 Header，再尝试隐藏其中的导航。
-实际部署中仍然无法稳定生效。
-
-V4 不再做这件事。
-
-首页 `/`：
-
-```text
-原 New API header
-→ display:none !important
-```
-
-然后 Worker 首页层自己提供：
-
-```text
-左上 New API
-右上 J
-```
-
-右上 J 使用原生 HTML `<details>` 菜单，因此不依赖 New API Header DOM。
-
-这样顶部不会再受：
-- New API React 重挂载
-- Header DOM 版本变化
-- Base UI class 变化
-- 原生导航重新渲染
-
-影响。
-
-离开 `/` 后 `data-moss-home` 被移除，原 New API Header 自动恢复。
-
-
-## V4.1：通知未读绿点
-
-铃铛绿点现在改为真正的“未读更新”状态：
-
-- 默认隐藏；
-- 成功拉取 `/api/notice` 后计算当前公告签名；
-- 本地没有读过这版公告时，显示绿点；
-- 点击铃铛打开通知中心后立即标记为已读，绿点消失；
-- 同一批公告以后刷新页面仍保持无绿点；
-- 后端公告内容/时间/id 发生变化后，绿点重新出现；
-- 页面打开期间每 2 分钟检查一次更新；
-- `/api/notice` 请求失败不会误亮绿点。
-
-状态存储：
-
-```text
-localStorage:
-moss.home.notice.seen.v1
-```
-
-另外如果页面仍运行在 New API 的旧“首页内容” iframe 中，
-V4.1 会自动隐藏 Worker 自己的 Topbar，减少 Logo/J 重复。
-真正消除原生导航仍需要清空“首页内容”和“页脚文本”，并启用 Worker Route。
-
-
-## V4.2：只保留自定义顶部栏
-
-用户最终要求：
-
-```text
-不要 New API 原来的顶部栏
-只保留 Worker 自定义顶部栏
-```
-
-V4.2 在 Worker 返回首页 HTML 时，服务器侧直接：
-
-```html
-<html data-moss-home="1">
-```
-
-并在 `<head>` 第一时间注入：
-
-```css
-html[data-moss-home="1"] body header {
-  display: none !important;
-}
-```
-
-因此正式 Worker Route 模式下：
-- 原 New API Header 首屏就不会出现；
-- 不依赖 React DOM；
-- 不依赖 JS 等待加载；
-- 不会闪一下再消失；
-- 只保留 Worker 自己的 New API Logo + J。
-
-注意：
-如果 `workers.dev` 仍然被放在 New API「首页内容」iframe 里，
-Worker 无法控制 iframe 外面的父页面 Header。
-
-最终效果必须：
-1. 清空 New API「首页内容」
-2. 清空 New API「页脚文本」
-3. 给 Worker 添加 Route `newapi.mossao.com/*`
-
-
-## V4.3：改用已验证可生效的原 Header 选择器
-
-不再使用：
-
-```css
-body header { display:none }
-```
-
-而是直接采用旧版页脚中已经在当前 New API 上验证生效的 DOM：
-
-```css
-header nav > a[href="/"]
-header nav > div.hidden.items-center
-header nav > div.flex.items-center.gap-2[class*="sm:hidden"]
-```
-
-首页会直接隐藏：
-- 原 Logo
-- 原桌面整组导航与按钮
-- 原手机导航
-
-只留下 Worker 自己的 Topbar / 铃铛 / Contact。
+即可立即恢复原 New API。

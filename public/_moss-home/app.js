@@ -37,40 +37,9 @@
     return location.pathname === '/';
   }
 
-  function applyRouteState() {
-    const active = isHomePath();
-
-    if (active) {
-      document.documentElement.setAttribute('data-moss-home', '1');
-      shell.setAttribute('aria-hidden', 'false');
-    } else {
-      document.documentElement.removeAttribute('data-moss-home');
-      shell.setAttribute('aria-hidden', 'true');
-
-      if (noticeState !== 'closed') hardClose();
-      if (contact) contact.open = false;
-
-      const account = document.querySelector('#mossAccount');
-      if (account) account.open = false;
-    }
-  }
-
-  const oldPushState = history.pushState;
-  history.pushState = function (...args) {
-    const result = oldPushState.apply(this, args);
-    queueMicrotask(applyRouteState);
-    return result;
-  };
-
-  const oldReplaceState = history.replaceState;
-  history.replaceState = function (...args) {
-    const result = oldReplaceState.apply(this, args);
-    queueMicrotask(applyRouteState);
-    return result;
-  };
-
-  addEventListener('popstate', applyRouteState);
-  applyRouteState();
+  // V5 首页本身就是独立静态文档，不再依赖 New API 父页面。
+  document.documentElement.setAttribute('data-moss-home', '1');
+  shell.setAttribute('aria-hidden', 'false');
 
   function cancelAnimations() {
     activeAnimations.forEach(a => {
