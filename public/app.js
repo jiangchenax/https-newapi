@@ -15,7 +15,6 @@ const timelineView = $('#timelineView');
 const contact = $('#contact');
 const copyEmail = $('#copyEmail');
 const copyLabel = $('#copyLabel');
-const avatarButton = $('#avatarButton');
 
 let noticeState = 'closed';
 let activeAnimations = [];
@@ -137,9 +136,6 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && noticeState === 'open') closeNoticePanel();
 });
 
-avatarButton.addEventListener('click', () => {
-  window.open(`${NEW_API}/dashboard`, '_blank', 'noopener,noreferrer');
-});
 
 $$('.tab').forEach(btn => {
   btn.addEventListener('click', () => {

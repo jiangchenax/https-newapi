@@ -89,3 +89,27 @@ https://moss-newapi-home.<你的workers.dev子域>.workers.dev/api/notice
 ```
 
 第二个地址应该返回 New API 公告 JSON，而不是 404。
+
+
+## V2：嵌入 New API 首页后的去重
+
+如果把 Workers URL 填进 New API 的「首页内容」，New API 自己的 Header 仍在 iframe 外层。
+
+V2 已经从 Workers 首页内部移除：
+- 左上 New API Logo
+- 右上 J
+
+这样不会与 New API 原生 Header 重复。
+
+同时使用随包提供的：
+
+```text
+NewAPI_页脚文本_CF首页外壳精简版.txt
+```
+
+放到 New API「页脚文本」，它只负责：
+- 保留原生左上 Logo
+- 保留原生右上头像
+- 隐藏主页 / 控制台 / 模型广场 / 排行榜 / 文档 / 关于
+- 隐藏语言 / 主题 / 原生通知铃铛等右侧多余按钮
+- 不再承担首页主体 UI
